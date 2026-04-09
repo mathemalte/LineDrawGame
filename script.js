@@ -12,6 +12,68 @@ function getNeighbors(cell, size) {
   return neighbors;
 }
 
+function generateLevelForDifficulty(difficulty) {
+  const config = difficultySettings[difficulty];
+
+  if (!config) {
+    throw new Error(`Keine Difficulty-Konfiguration für: ${difficulty}`);
+  }
+
+  try {
+    if (config.generator === "v2") {
+      return generateSolvableLevelV2(
+        config.size,
+        config.nPairs,
+        config.options || {}
+      );
+    }
+
+    if (config.generator === "fast") {
+      return generateSolvableLevel(
+        config.size,
+        config.nPairs,
+        config.minLength || 3
+      );
+    }
+
+    throw new Error(`Unbekannter Generator: ${config.generator}`);
+  } catch (error) {
+    alert("Beim Generieren dieses Levels ist ein Fehler aufgetreten. Es wird ein Ersatzlevel geladen.");
+    return generateSolvableLevel(5, 4, 3);
+  }
+}
+
+function startDifficulty(difficulty) {
+  currentDifficulty = difficulty;
+
+  try {
+    currentLevel = generateLevelForDifficulty(difficulty);
+    loadGeneratedLevel(currentLevel);
+    showGame();
+    updateLevelIndicator();
+  } catch (error) {
+    alert("Diese Schwierigkeit konnte gerade nicht geladen werden.");
+  }
+}
+
+function nextGeneratedLevel() {
+  if (!currentDifficulty) return;
+
+  difficultyProgress[currentDifficulty] += 1;
+  saveProgress();
+  updateScoreboard();
+
+  currentLevel = generateLevelForDifficulty(currentDifficulty);
+  loadGeneratedLevel(currentLevel);
+  updateLevelIndicator();
+}
+
+function resetCurrentLevel() {
+  if (!currentLevel) return;
+  loadGeneratedLevel(currentLevel);
+  updateLevelIndicator();
+}
+
 function cellKey(cell) {
   return `${cell[0]}-${cell[1]}`;
 }
@@ -87,6 +149,57 @@ function generateColorList(count) {
   return baseColors.slice(0, Math.min(count, baseColors.length));
 }
 
+function generateSnakePath(size) {
+  const path = [];
+
+  for (let row = 0; row < size; row++) {
+    if (row % 2 === 0) {
+      for (let col = 0; col < size; col++) {
+        path.push([row, col]);
+      }
+    } else {
+      for (let col = size - 1; col >= 0; col--) {
+        path.push([row, col]);
+      }
+    }
+  }
+
+  return path;
+}
+
+function generateSolvableLevel(size, nPairs, minLength = 3) {
+  const totalCells = size * size;
+
+  if (nPairs * minLength > totalCells) {
+    throw new Error("Zu viele Farben oder minLength zu groß.");
+  }
+
+  const fullPath = generateSnakePath(size);
+  const lengths = randomSegmentLengths(totalCells, nPairs, minLength);
+  const colors = generateColorList(nPairs);
+
+  const pairs = [];
+  let startIndex = 0;
+
+  for (let i = 0; i < nPairs; i++) {
+    const segmentLength = lengths[i];
+    const segment = fullPath.slice(startIndex, startIndex + segmentLength);
+
+    pairs.push({
+      color: colors[i],
+      start: segment[0],
+      end: segment[segment.length - 1]
+    });
+
+    startIndex += segmentLength;
+  }
+
+  return {
+    size,
+    pairs
+  };
+}
+
 function randomSegmentLengths(totalCells, nPairs, minLength = 3, maxLength = null) {
   const lengths = Array(nPairs).fill(minLength);
   let remaining = totalCells - nPairs * minLength;
@@ -147,30 +260,58 @@ function generateSolvableLevelV2(size, nPairs, options = {}) {
   };
 }
 
-const levelGroups = {
-  easy: [
-    { generator: "v2", size: 5, nPairs: 4, options: { minLength: 4, maxLength: 8 } },
-    { generator: "v2", size: 6, nPairs: 5, options: { minLength: 4, maxLength: 10 } }
-  ],
-  medium: [
-    { generator: "v2", size: 7, nPairs: 6, options: { minLength: 5 } }
-  ],
-  hard: [
-    { generator: "fast", size: 10, nPairs: 8, minLength: 6 }
-  ]
+let difficultyProgress = {
+  easy: 1,
+  medium: 1,
+  hard: 1
 };
 
-function buildLevelFromConfig(config) {
-  if (config.generator === "v2") {
-    return generateSolvableLevelV2(config.size, config.nPairs, config.options || {});
-  }
-
-  if (config.generator === "fast") {
-    return generateSolvableLevel(config.size, config.nPairs, config.minLength || 3);
-  }
-
-  throw new Error("Unbekannter Generator");
+function saveProgress() {
+  localStorage.setItem("linedrawProgress", JSON.stringify(difficultyProgress));
 }
+
+function loadProgress() {
+  const saved = localStorage.getItem("linedrawProgress");
+
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+
+      difficultyProgress = {
+        easy: parsed.easy || 1,
+        medium: parsed.medium || 1,
+        hard: parsed.hard || 1
+      };
+    } catch (error) {
+      difficultyProgress = {
+        easy: 1,
+        medium: 1,
+        hard: 1
+      };
+    }
+  }
+}
+
+const difficultySettings = {
+  easy: {
+    size: 5,
+    nPairs: 4,
+    generator: "fast",
+    minLength: 3
+  },
+  medium: {
+    size: 7,
+    nPairs: 6,
+    generator: "fast",
+    minLength: 4
+  },
+  hard: {
+    size: 8,
+    nPairs: 7,
+    generator: "fast",
+    minLength: 5
+  }
+};
 
 let currentDifficulty = "easy";
 let currentLevelIndex = null;
@@ -181,10 +322,10 @@ let isDrawing = false;
 let currentColor = null;
 let currentPath = [];
 let startEndpointCell = null;
+let currentLevel = null;
 
 const paths = {};
 const completed = {};
-const generatedLevelCache = {};
 
 function getCell(row, col) {
   return document.querySelector(
@@ -212,37 +353,6 @@ function getDirection(fromCell, toCell) {
   if (toRow === fromRow && toCol === fromCol + 1) return "right";
 
   return null;
-}
-
-function getCachedLevel(difficulty, index) {
-  const key = `${difficulty}-${index}`;
-
-  if (generatedLevelCache[key]) {
-    return generatedLevelCache[key];
-  }
-
-  const config = levelGroups[difficulty][index];
-  let builtLevel;
-
-  if (config.generator === "v2") {
-    builtLevel = generateSolvableLevelV2(
-      config.size,
-      config.nPairs,
-      config.options || {}
-    );
-  } else if (config.generator === "fast") {
-    builtLevel = generateSolvableLevel(
-      config.size,
-      config.nPairs,
-      config.minLength || 3
-    );
-  } else {
-    // falls du feste Levels drin hast
-    builtLevel = config;
-  }
-
-  generatedLevelCache[key] = builtLevel;
-  return builtLevel;
 }
 
 function clearPipeClasses(cell) {
@@ -526,18 +636,12 @@ function renderDifficultyButtons() {
 
   container.innerHTML = "";
 
-  Object.keys(levelGroups).forEach(difficulty => {
+  Object.keys(difficultySettings).forEach(difficulty => {
     const btn = document.createElement("button");
     btn.textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
 
-    if (difficulty === currentDifficulty) {
-      btn.classList.add("active");
-    }
-
     btn.addEventListener("click", () => {
-      currentDifficulty = difficulty;
-      renderDifficultyButtons();
-      renderLevelButtons();
+      startDifficulty(difficulty);
     });
 
     container.appendChild(btn);
@@ -664,52 +768,61 @@ function stopDrawing() {
   renderAllPaths();
 
   if (checkWin()) {
-    showWinMessage();
+  showWinMessage();
+  showNextLevelButton();
+}
+}
 
-    const levelsForDifficulty = levelGroups[currentDifficulty];
-    if (currentLevelIndex + 1 < levelsForDifficulty.length) {
-      showNextLevelButton();
-    }
-  }
+function getCellFromPointerEvent(event) {
+  const element = document.elementFromPoint(event.clientX, event.clientY);
+  return element ? element.closest(".cell") : null;
 }
 
 function addEventListeners() {
-  document.querySelectorAll(".cell").forEach(cell => {
-    cell.addEventListener("mousedown", () => startDrawing(cell));
-    cell.addEventListener("mouseenter", () => continueDrawing(cell));
-    cell.addEventListener("mouseup", stopDrawing);
+  board.onpointerdown = null;
+  board.onpointermove = null;
+  board.onpointerup = null;
+  board.onpointerleave = null;
+  board.onpointercancel = null;
 
-    cell.addEventListener("touchstart", e => {
-      e.preventDefault();
-      startDrawing(cell);
-    });
+  board.onpointerdown = (event) => {
+    const cell = event.target.closest(".cell");
+    if (!cell) return;
 
-    cell.addEventListener("touchmove", e => {
-  e.preventDefault();
-  const touch = e.touches[0];
-  const element = document.elementFromPoint(touch.clientX, touch.clientY);
-  const cellElement = element ? element.closest(".cell") : null;
+    event.preventDefault();
+    board.setPointerCapture?.(event.pointerId);
+    startDrawing(cell);
+  };
 
-  if (cellElement) {
-    continueDrawing(cellElement);
-  }
-});
+  board.onpointermove = (event) => {
+    if (!isDrawing) return;
 
-    cell.addEventListener("touchend", e => {
-      e.preventDefault();
-      stopDrawing();
-    });
-  });
+    event.preventDefault();
 
-  document.addEventListener("mouseup", stopDrawing);
-  document.addEventListener("touchend", stopDrawing);
+    const cell = getCellFromPointerEvent(event);
+    if (cell) {
+      continueDrawing(cell);
+    }
+  };
+
+  board.onpointerup = (event) => {
+    event.preventDefault();
+    stopDrawing();
+  };
+
+  board.onpointerleave = (event) => {
+    if (!isDrawing) return;
+    event.preventDefault();
+  };
+
+  board.onpointercancel = (event) => {
+    event.preventDefault();
+    stopDrawing();
+  };
 }
 
-function loadLevel(difficulty, index) {
-  currentDifficulty = difficulty;
-  currentLevelIndex = index;
-  const config = levelGroups[difficulty][index];
-level = getCachedLevel(difficulty, index);
+function loadGeneratedLevel(levelData) {
+  level = levelData;
   gridSize = level.size;
 
   board.innerHTML = "";
@@ -722,25 +835,24 @@ level = getCachedLevel(difficulty, index);
     completed[pair.color] = false;
   });
 
-  const uiOffset = 160; // Platz für Header + Buttons (kannst du später feinjustieren)
+  const uiOffset = 160;
+  const maxWidth = window.innerWidth;
+  const maxHeight = window.innerHeight - uiOffset;
 
-const maxWidth = window.innerWidth;
-const maxHeight = window.innerHeight - uiOffset;
+  const maxSize = Math.min(maxWidth, maxHeight) * 0.95;
+  const cellSize = Math.floor(maxSize / gridSize);
 
-const maxSize = Math.min(maxWidth, maxHeight) * 0.95;
-const cellSize = Math.floor(maxSize / gridSize);
+  const pipeThickness = Math.max(12, Math.floor(cellSize * 0.22));
+  const endpointSize = Math.max(20, Math.floor(cellSize * 0.34));
+  const endpointRing = Math.max(5, Math.floor(cellSize * 0.09));
 
-const pipeThickness = Math.max(12, Math.floor(cellSize * 0.24));
-const endpointSize = Math.max(22, Math.floor(cellSize * 0.38));
-const endpointRing = Math.max(5, Math.floor(cellSize * 0.10));
+  board.style.gridTemplateColumns = `repeat(${gridSize}, ${cellSize}px)`;
+  board.style.gridTemplateRows = `repeat(${gridSize}, ${cellSize}px)`;
 
-board.style.gridTemplateColumns = `repeat(${gridSize}, ${cellSize}px)`;
-board.style.gridTemplateRows = `repeat(${gridSize}, ${cellSize}px)`;
-
-board.style.setProperty("--cell-size", `${cellSize}px`);
-board.style.setProperty("--pipe-thickness", `${pipeThickness}px`);
-board.style.setProperty("--endpoint-size", `${endpointSize}px`);
-board.style.setProperty("--endpoint-ring", `${endpointRing}px`);
+  board.style.setProperty("--cell-size", `${cellSize}px`);
+  board.style.setProperty("--pipe-thickness", `${pipeThickness}px`);
+  board.style.setProperty("--endpoint-size", `${endpointSize}px`);
+  board.style.setProperty("--endpoint-ring", `${endpointRing}px`);
 
   for (let row = 0; row < gridSize; row++) {
     for (let col = 0; col < gridSize; col++) {
@@ -761,8 +873,15 @@ board.style.setProperty("--endpoint-ring", `${endpointRing}px`);
   addEventListeners();
   hideWinMessage();
   hideNextLevelButton();
-  updateLevelIndicator();
   renderAllPaths();
+}
+
+function updateLevelIndicator() {
+  const indicator = document.getElementById("level-indicator");
+  if (!indicator || !currentDifficulty) return;
+
+  indicator.textContent =
+    `${currentDifficulty.toUpperCase()} – Level ${difficultyProgress[currentDifficulty]}`;
 }
 
 function regenerateCurrentLevel() {
@@ -771,22 +890,56 @@ function regenerateCurrentLevel() {
   loadLevel(currentDifficulty, currentLevelIndex);
 }
 
+function resetProgress() {
+  difficultyProgress = {
+    easy: 1,
+    medium: 1,
+    hard: 1
+  };
+
+  saveProgress();
+  updateScoreboard();
+  updateLevelIndicator();
+}
+
+function updateScoreboard() {
+  const easy = document.getElementById("score-easy");
+  const medium = document.getElementById("score-medium");
+  const hard = document.getElementById("score-hard");
+
+  if (easy) {
+    easy.textContent = `Easy: Level ${difficultyProgress.easy}`;
+  }
+
+  if (medium) {
+    medium.textContent = `Medium: Level ${difficultyProgress.medium}`;
+  }
+
+  if (hard) {
+    hard.textContent = `Hard: Level ${difficultyProgress.hard}`;
+  }
+}
+
+const resetProgressBtn = document.getElementById("reset-progress-btn");
+
+if (resetProgressBtn) {
+  resetProgressBtn.addEventListener("click", () => {
+    resetProgress();
+    alert("Fortschritt zurückgesetzt.");
+  });
+}
+
 const nextLevelBtn = document.getElementById("next-level-btn");
 if (nextLevelBtn) {
   nextLevelBtn.addEventListener("click", () => {
-    const levelsForDifficulty = levelGroups[currentDifficulty];
-    if (currentLevelIndex + 1 < levelsForDifficulty.length) {
-      loadLevel(currentDifficulty, currentLevelIndex + 1);
-    }
+    nextGeneratedLevel();
   });
 }
 
 const resetBtn = document.getElementById("reset-btn");
 if (resetBtn) {
   resetBtn.addEventListener("click", () => {
-    if (currentDifficulty !== null && currentLevelIndex !== null) {
-      loadLevel(currentDifficulty, currentLevelIndex);
-    }
+    resetCurrentLevel();
   });
 }
 
@@ -796,7 +949,8 @@ if (backBtn) {
     showMenu();
   });
 }
-
+loadProgress();
 renderDifficultyButtons();
 renderLevelButtons();
+updateScoreboard();
 showMenu();
