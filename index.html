@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Line Draw Game</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<h1>Line Draw</h1>
+
+<div id="menu-screen">
+  <h2>Level auswählen</h2>
+
+  <div class="menu-section">
+    <h3>Schwierigkeit</h3>
+    <div id="difficulty-buttons" class="menu-buttons"></div>
+  </div>
+
+  <div class="menu-section">
+    <h3>Level</h3>
+    <div id="level-buttons" class="menu-buttons"></div>
+  </div>
+</div>
+
+<p id="level-indicator">Level</p>
+
+<button id="back-to-menu-btn" style="display: none;">Menü</button>
+
+<div id="game-board"></div>
+
+<div class="button-row">
+  <button id="reset-btn">Reset</button>
+  <button id="next-level-btn" style="display: none;">Nächstes Level</button>
+</div>
+
+<p id="win-message" style="display:none;">
+  🎉 Gewonnen!
+</p>
+
+  <script src="script.js"></script>
+</body>
+</html>

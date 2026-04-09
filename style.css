@@ -1,0 +1,272 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(180deg, #f7f8fc 0%, #e9ecf5 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 30px 20px;
+  box-sizing: border-box;
+}
+
+h1 {
+  margin: 0 0 10px 0;
+  font-size: 36px;
+  color: #222;
+}
+
+#level-indicator {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  font-weight: bold;
+  color: #555;
+  background: white;
+  padding: 8px 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+#game-board {
+  display: grid;
+  gap: 4px;
+  background: #2f3542;
+  padding: 8px;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  touch-action: none;
+  margin-bottom: 20px;
+}
+
+.cell {
+  width: 60px;
+  height: 60px;
+  background: #f1f5f9;
+  border-radius: 12px;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.pipe {
+  position: absolute;
+  inset: 0;
+}
+.pipe,
+.pipe * {
+  pointer-events: none;
+}
+
+/* Mittelpunkt */
+.pipe::before {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 20px;
+  top: 20px;
+  border-radius: 50%;
+  background: transparent;
+  z-index: 2;
+}
+
+/* Farben */
+.pipe.red::before { background: #ef4444; }
+.pipe.blue::before { background: #3b82f6; }
+.pipe.green::before { background: #22c55e; }
+.pipe.yellow::before { background: #eab308; }
+.pipe.purple::before { background: #a855f7; }
+
+/* Endpunkte */
+.pipe.endpoint-pipe::before {
+  width: 22px;
+  height: 22px;
+  left: 19px;
+  top: 19px;
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.95);
+}
+
+/* Segmente */
+.pipe .segment {
+  position: absolute;
+  background: transparent;
+  z-index: 3; /* über dem Punkt */
+}
+
+/* Farben der Segmente */
+.pipe.red .segment { background: #ef4444; }
+.pipe.blue .segment { background: #3b82f6; }
+.pipe.green .segment { background: #22c55e; }
+.pipe.yellow .segment { background: #eab308; }
+.pipe.purple .segment { background: #a855f7; }
+
+/* Vertikale Segmente */
+.pipe .segment.up,
+.pipe .segment.down {
+  width: 20px;
+  left: 20px;
+}
+
+/* Horizontale Segmente */
+.pipe .segment.left,
+.pipe .segment.right {
+  height: 20px;
+  top: 20px;
+}
+
+/* Richtungen */
+.pipe .segment.up {
+  top: 0;
+  height: 30px;
+}
+
+.pipe .segment.down {
+  bottom: 0;
+  height: 30px;
+}
+
+.pipe .segment.left {
+  left: 0;
+  width: 30px;
+}
+
+.pipe .segment.right {
+  right: 0;
+  width: 30px;
+}
+
+/* Endpunkte */
+.pipe.endpoint-pipe::before {
+  width: 26px;
+  height: 26px;
+  left: 17px;
+  top: 17px;
+  box-shadow: 0 0 0 6px #f1f5f9;
+  z-index: 1; /* wichtig */
+}
+
+/* Verbindungen nach oben */
+.pipe.connect-up::before {
+  width: 22px;
+  height: 30px;
+  left: 0;
+  top: -24px;
+}
+
+/* Verbindungen nach unten */
+.pipe.connect-down::before {
+  width: 22px;
+  height: 30px;
+  left: 0;
+  top: 16px;
+}
+
+/* Verbindungen nach links */
+.pipe.connect-left::after {
+  width: 30px;
+  height: 22px;
+  left: -24px;
+  top: 0;
+}
+
+/* Verbindungen nach rechts */
+.pipe.connect-right::after {
+  width: 30px;
+  height: 22px;
+  left: 16px;
+  top: 0;
+}
+
+.endpoint {
+  border-radius: 50%;
+}
+
+.button-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+button {
+  padding: 10px 18px;
+  font-size: 16px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  transition: transform 0.08s ease, opacity 0.2s ease;
+}
+
+button:hover {
+  opacity: 0.95;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+#reset-btn {
+  background: #444;
+  color: white;
+}
+
+#next-level-btn {
+  background: #22c55e;
+  color: white;
+}
+
+#win-message {
+  margin: 0;
+  font-size: 24px;
+  font-weight: bold;
+  color: #16a34a;
+  background: white;
+  padding: 10px 18px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+#menu-screen {
+  background: white;
+  padding: 20px;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  margin-bottom: 20px;
+  width: min(500px, 90vw);
+}
+
+#menu-screen h2,
+#menu-screen h3 {
+  margin-top: 0;
+  color: #222;
+}
+
+.menu-section {
+  margin-bottom: 18px;
+}
+
+.menu-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.menu-buttons button,
+#back-to-menu-btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 12px;
+  background: #334155;
+  color: white;
+  cursor: pointer;
+  font-size: 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.menu-buttons button.active {
+  background: #2563eb;
+}
+
+#back-to-menu-btn {
+  margin-bottom: 16px;
+}
