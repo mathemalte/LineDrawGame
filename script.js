@@ -722,8 +722,25 @@ level = getCachedLevel(difficulty, index);
     completed[pair.color] = false;
   });
 
-  board.style.gridTemplateColumns = `repeat(${gridSize}, 60px)`;
-  board.style.gridTemplateRows = `repeat(${gridSize}, 60px)`;
+  const uiOffset = 160; // Platz für Header + Buttons (kannst du später feinjustieren)
+
+const maxWidth = window.innerWidth;
+const maxHeight = window.innerHeight - uiOffset;
+
+const maxSize = Math.min(maxWidth, maxHeight) * 0.95;
+const cellSize = Math.floor(maxSize / gridSize);
+
+const pipeThickness = Math.max(12, Math.floor(cellSize * 0.24));
+const endpointSize = Math.max(22, Math.floor(cellSize * 0.38));
+const endpointRing = Math.max(5, Math.floor(cellSize * 0.10));
+
+board.style.gridTemplateColumns = `repeat(${gridSize}, ${cellSize}px)`;
+board.style.gridTemplateRows = `repeat(${gridSize}, ${cellSize}px)`;
+
+board.style.setProperty("--cell-size", `${cellSize}px`);
+board.style.setProperty("--pipe-thickness", `${pipeThickness}px`);
+board.style.setProperty("--endpoint-size", `${endpointSize}px`);
+board.style.setProperty("--endpoint-ring", `${endpointRing}px`);
 
   for (let row = 0; row < gridSize; row++) {
     for (let col = 0; col < gridSize; col++) {

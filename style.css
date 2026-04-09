@@ -1,12 +1,12 @@
 body {
   margin: 0;
+  padding: 0;
   font-family: Arial, sans-serif;
   background: linear-gradient(180deg, #f7f8fc 0%, #e9ecf5 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
-  padding: 30px 20px;
   box-sizing: border-box;
 }
 
@@ -29,20 +29,26 @@ h1 {
 
 #game-board {
   display: grid;
-  gap: 4px;
+  --grid-gap: 4px;
+  gap: var(--grid-gap);
   background: #2f3542;
   padding: 8px;
   border-radius: 18px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   touch-action: none;
-  margin-bottom: 20px;
+  margin: 10px auto 20px auto;
+
+  --cell-size: 60px;
+  --pipe-thickness: 20px;
+  --endpoint-size: 26px;
+  --endpoint-ring: 6px;
 }
 
 .cell {
-  width: 60px;
-  height: 60px;
+  width: var(--cell-size);
+  height: var(--cell-size);
   background: #f1f5f9;
-  border-radius: 12px;
+  border-radius: calc(var(--cell-size) * 0.2);
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
@@ -51,135 +57,102 @@ h1 {
 .pipe {
   position: absolute;
   inset: 0;
+  pointer-events: none;
 }
-.pipe,
+
 .pipe * {
   pointer-events: none;
 }
 
-/* Mittelpunkt */
 .pipe::before {
   content: "";
   position: absolute;
-  width: 20px;
-  height: 20px;
-  left: 20px;
-  top: 20px;
+  width: var(--pipe-thickness);
+  height: var(--pipe-thickness);
+  top: 50%;
+  left: 50%;
+  margin-top: calc(var(--pipe-thickness) / -2);
+  margin-left: calc(var(--pipe-thickness) / -2);
   border-radius: 50%;
   background: transparent;
   z-index: 2;
 }
 
-/* Farben */
 .pipe.red::before { background: #ef4444; }
 .pipe.blue::before { background: #3b82f6; }
 .pipe.green::before { background: #22c55e; }
 .pipe.yellow::before { background: #eab308; }
 .pipe.purple::before { background: #a855f7; }
+.pipe.cyan::before { background: #06b6d4; }
+.pipe.orange::before { background: #f97316; }
+.pipe.pink::before { background: #ec4899; }
+.pipe.lime::before { background: #84cc16; }
+.pipe.teal::before { background: #14b8a6; }
 
-/* Endpunkte */
 .pipe.endpoint-pipe::before {
-  width: 22px;
-  height: 22px;
-  left: 19px;
-  top: 19px;
-  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.95);
+  width: var(--endpoint-size);
+  height: var(--endpoint-size);
+  top: 50%;
+  left: 50%;
+  margin-top: calc(var(--endpoint-size) / -2);
+  margin-left: calc(var(--endpoint-size) / -2);
+  box-shadow: 0 0 0 var(--endpoint-ring) #f1f5f9;
+  z-index: 1;
 }
 
-/* Segmente */
 .pipe .segment {
   position: absolute;
   background: transparent;
-  z-index: 3; /* über dem Punkt */
+  z-index: 3;
+  border-radius: calc(var(--pipe-thickness) * 0.15);
 }
 
-/* Farben der Segmente */
+.pipe .segment.up,
+.pipe .segment.down {
+  width: var(--pipe-thickness);
+  left: 50%;
+  margin-left: calc(var(--pipe-thickness) / -2);
+}
+
+.pipe .segment.left,
+.pipe .segment.right {
+  height: var(--pipe-thickness);
+  top: 50%;
+  margin-top: calc(var(--pipe-thickness) / -2);
+}
+
+.pipe .segment.up {
+  top: calc(var(--grid-gap) / -2);
+  height: calc(50% + var(--pipe-thickness) / 2 + var(--grid-gap) / 2);
+}
+
+.pipe .segment.down {
+  bottom: calc(var(--grid-gap) / -2);
+  height: calc(50% + var(--pipe-thickness) / 2 + var(--grid-gap) / 2);
+}
+
+.pipe .segment.left {
+  left: calc(var(--grid-gap) / -2);
+  width: calc(50% + var(--pipe-thickness) / 2 + var(--grid-gap) / 2);
+}
+
+.pipe .segment.right {
+  right: calc(var(--grid-gap) / -2);
+  width: calc(50% + var(--pipe-thickness) / 2 + var(--grid-gap) / 2);
+}
+
 .pipe.red .segment { background: #ef4444; }
 .pipe.blue .segment { background: #3b82f6; }
 .pipe.green .segment { background: #22c55e; }
 .pipe.yellow .segment { background: #eab308; }
 .pipe.purple .segment { background: #a855f7; }
+.pipe.cyan .segment { background: #06b6d4; }
+.pipe.orange .segment { background: #f97316; }
+.pipe.pink .segment { background: #ec4899; }
+.pipe.lime .segment { background: #84cc16; }
+.pipe.teal .segment { background: #14b8a6; }
 
-/* Vertikale Segmente */
-.pipe .segment.up,
-.pipe .segment.down {
-  width: 20px;
-  left: 20px;
-}
 
-/* Horizontale Segmente */
-.pipe .segment.left,
-.pipe .segment.right {
-  height: 20px;
-  top: 20px;
-}
-
-/* Richtungen */
-.pipe .segment.up {
-  top: 0;
-  height: 30px;
-}
-
-.pipe .segment.down {
-  bottom: 0;
-  height: 30px;
-}
-
-.pipe .segment.left {
-  left: 0;
-  width: 30px;
-}
-
-.pipe .segment.right {
-  right: 0;
-  width: 30px;
-}
-
-/* Endpunkte */
-.pipe.endpoint-pipe::before {
-  width: 26px;
-  height: 26px;
-  left: 17px;
-  top: 17px;
-  box-shadow: 0 0 0 6px #f1f5f9;
-  z-index: 1; /* wichtig */
-}
-
-/* Verbindungen nach oben */
-.pipe.connect-up::before {
-  width: 22px;
-  height: 30px;
-  left: 0;
-  top: -24px;
-}
-
-/* Verbindungen nach unten */
-.pipe.connect-down::before {
-  width: 22px;
-  height: 30px;
-  left: 0;
-  top: 16px;
-}
-
-/* Verbindungen nach links */
-.pipe.connect-left::after {
-  width: 30px;
-  height: 22px;
-  left: -24px;
-  top: 0;
-}
-
-/* Verbindungen nach rechts */
-.pipe.connect-right::after {
-  width: 30px;
-  height: 22px;
-  left: 16px;
-  top: 0;
-}
-
-.endpoint {
-  border-radius: 50%;
-}
 
 .button-row {
   display: flex;
