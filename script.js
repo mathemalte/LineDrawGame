@@ -638,11 +638,17 @@ function loadGeneratedLevel(levelData) {
   });
 
   const uiOffset = 160;
-  const maxWidth = window.innerWidth;
-  const maxHeight = window.innerHeight - uiOffset;
+  const padding = 16; // Sicherheit für Rand + Shadow
+const gap = 4; // entspricht deinem CSS gap
 
-  const maxSize = Math.min(maxWidth, maxHeight) * 0.95;
-  const cellSize = Math.floor(maxSize / gridSize);
+const usableWidth = window.innerWidth - padding;
+const usableHeight = window.innerHeight - uiOffset - padding;
+
+const maxSize = Math.min(usableWidth, usableHeight);
+
+const cellSize = Math.floor(
+  (maxSize - gap * (gridSize - 1)) / gridSize
+);
 
   const pipeThickness = Math.max(12, Math.floor(cellSize * 0.22));
   const endpointSize = Math.max(20, Math.floor(cellSize * 0.34));
