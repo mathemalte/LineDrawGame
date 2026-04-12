@@ -1,14 +1,19 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="LineDraw" />
-<meta name="theme-color" content="#2f3542" />
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Line Draw Game</title>
+
+  <meta name="theme-color" content="#2f3542" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="LineDraw" />
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-512.png" />
   <link rel="stylesheet" href="style.css" />
+
+  <title>Line Draw Game</title>
 </head>
 <body>
 <h1>Line Draw</h1>
@@ -43,6 +48,8 @@
   🎉 Gewonnen!
 </p>
 
-  <script src="script.js"></script>
+<script src="levels_seed.js"></script>
+<script src="levels.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

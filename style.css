@@ -91,6 +91,7 @@ h1 {
 .pipe.pink::before { background: #ec4899; }
 .pipe.lime::before { background: #84cc16; }
 .pipe.teal::before { background: #14b8a6; }
+.pipe.brown::before { background: #a56b46; }
 
 .pipe.endpoint-pipe::before {
   width: var(--endpoint-size);
@@ -154,6 +155,7 @@ h1 {
 .pipe.pink .segment { background: #ec4899; }
 .pipe.lime .segment { background: #84cc16; }
 .pipe.teal .segment { background: #14b8a6; }
+.pipe.brown .segment { background: #a56b46; }
 
 
 

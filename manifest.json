@@ -1,0 +1,15 @@
+{
+  "name": "Line Draw Game",
+  "short_name": "LineDraw",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f7f8fc",
+  "theme_color": "#2f3542",
+  "icons": [
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
