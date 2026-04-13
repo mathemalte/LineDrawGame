@@ -1,5 +1,11 @@
 const board = document.getElementById("game-board");
 
+function vibrate(pattern) {
+  if (navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+}
+
 function getPrebuiltLevel(difficulty) {
   const levels = levelWorlds[difficulty];
 
@@ -447,6 +453,8 @@ function renderDifficultyButtons() {
 }
 
 function startDrawing(cell) {
+  // leichtes Feedback beim Start
+vibrate(10);
   const color = cell.dataset.color;
 
   // Start nur auf eigenem Endpoint oder auf bestehendem eigenen Planungs-Pfad
@@ -674,6 +682,8 @@ function stopDrawing() {
   const lastCell = currentPath[currentPath.length - 1];
 
   if (isCorrectEndpoint(lastCell, drawnColor)) {
+    // stärkeres Feedback beim erfolgreichen Verbinden
+vibrate([20, 30, 20]);
     // korrekt verbunden => fertige Linie
     paths[drawnColor] = [...currentPath];
     completed[drawnColor] = true;
