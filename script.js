@@ -870,12 +870,18 @@ function loadGeneratedLevel(levelData) {
     completed[pair.color] = false;
   });
 
-  const uiOffset = 160;
-  const padding = 16; // Sicherheit für Rand + Shadow
-const gap = 4; // entspricht deinem CSS gap
+  const sidePadding = 16;
+const bottomSafety = 28;
+const gap = 0; // muss zu deinem CSS passen
 
-const usableWidth = window.innerWidth - padding;
-const usableHeight = window.innerHeight - uiOffset - padding;
+const viewportHeight = window.visualViewport
+  ? window.visualViewport.height
+  : window.innerHeight;
+
+const boardTop = board.getBoundingClientRect().top;
+
+const usableWidth = window.innerWidth - sidePadding * 2;
+const usableHeight = viewportHeight - boardTop - bottomSafety;
 
 const maxSize = Math.min(usableWidth, usableHeight);
 

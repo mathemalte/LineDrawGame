@@ -1,7 +1,99 @@
 const levelSeeds = {
   easy: [
-    // deine easy level hier
-  ],
+  {
+    id: "easy-seed-001",
+    size: 6,
+    pairs: [
+      { color: "orange", start: [1, 1], end: [2, 4] },
+      { color: "green",  start: [1, 2], end: [1, 4] },
+      { color: "cyan",   start: [1, 5], end: [2, 0] },
+      { color: "blue",   start: [2, 5], end: [3, 0] },
+      { color: "red",    start: [3, 1], end: [3, 3] },
+      { color: "yellow", start: [3, 4], end: [4, 1] }
+    ]
+  },
+
+  {
+    id: "easy-seed-002",
+    size: 6,
+    pairs: [
+      { color: "green",  start: [0, 1], end: [5, 0] },
+      { color: "orange", start: [1, 1], end: [5, 1] },
+      { color: "yellow", start: [1, 3], end: [4, 5] },
+      { color: "blue",   start: [1, 4], end: [3, 5] },
+      { color: "red",    start: [2, 5], end: [5, 5] }
+    ]
+  },
+
+  {
+    id: "easy-seed-003",
+    size: 7,
+    pairs: [
+      { color: "yellow", start: [0, 4], end: [2, 5] },
+      { color: "red",    start: [0, 5], end: [3, 5] },
+      { color: "orange", start: [1, 1], end: [4, 4] },
+      { color: "cyan",   start: [1, 2], end: [3, 3] },
+      { color: "green",  start: [3, 4], end: [5, 6] },
+      { color: "blue",   start: [4, 6], end: [5, 1] }
+    ]
+  },
+
+  {
+    id: "easy-seed-004",
+    size: 8,
+    pairs: [
+      { color: "pink",   start: [0, 5], end: [7, 3] },
+      { color: "orange", start: [1, 3], end: [2, 1] },
+      { color: "yellow", start: [2, 0], end: [3, 6] },
+      { color: "brown",  start: [2, 2], end: [3, 5] },
+      { color: "cyan",   start: [3, 0], end: [5, 2] },
+      { color: "green",  start: [3, 1], end: [6, 1] },
+      { color: "blue",   start: [3, 2], end: [6, 3] },
+      { color: "red",    start: [4, 2], end: [5, 5] }
+    ]
+  },
+
+  {
+    id: "easy-seed-005",
+    size: 8,
+    pairs: [
+      { color: "brown",  start: [0, 4], end: [1, 6] },
+      { color: "green",  start: [0, 5], end: [2, 5] },
+      { color: "red",    start: [1, 1], end: [5, 2] },
+      { color: "cyan",   start: [1, 2], end: [4, 3] },
+      { color: "pink",   start: [3, 5], end: [3, 7] },
+      { color: "orange", start: [5, 1], end: [7, 5] },
+      { color: "blue",   start: [5, 6], end: [6, 1] },
+      { color: "yellow", start: [6, 0], end: [6, 6] }
+    ]
+  },
+
+  {
+    id: "easy-seed-006",
+    size: 7,
+    pairs: [
+      { color: "green",  start: [1, 2], end: [3, 3] },
+      { color: "blue",   start: [1, 5], end: [2, 2] },
+      { color: "cyan",   start: [2, 4], end: [5, 0] },
+      { color: "yellow", start: [3, 0], end: [5, 5] },
+      { color: "red",    start: [3, 6], end: [6, 2] },
+      { color: "orange", start: [5, 4], end: [6, 0] }
+    ]
+  },
+
+  {
+    id: "easy-seed-007",
+    size: 7,
+    pairs: [
+      { color: "green",  start: [0, 1], end: [5, 5] },
+      { color: "blue",   start: [0, 5], end: [5, 4] },
+      { color: "cyan",   start: [0, 6], end: [6, 6] },
+      { color: "yellow", start: [1, 3], end: [2, 2] },
+      { color: "orange", start: [1, 5], end: [3, 2] },
+      { color: "red",    start: [2, 5], end: [4, 2] }
+    ]
+  }
+],
 
   medium: [
     // deine medium level hier
