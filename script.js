@@ -92,6 +92,10 @@ let currentPath = [];
 let startEndpointCell = null;
 let currentLevel = null;
 
+let pendingPointerCell = null;
+let animationFrameScheduled = false;
+let lastProcessedCell = null;
+
 const paths = {};
 const completed = {};
 
@@ -170,6 +174,21 @@ function renderPath(color) {
     const isEndpoint = cell.dataset.endpoint === "true";
     applyPipeShape(cell, color, connections, isEndpoint);
   });
+}
+
+function isCellEqualToPathEnd(cell, path, atStart = false) {
+  if (!path || path.length === 0) return false;
+
+  const target = atStart ? path[0] : path[path.length - 1];
+
+  return (
+    Number(cell.dataset.row) === Number(target.dataset.row) &&
+    Number(cell.dataset.col) === Number(target.dataset.col)
+  );
+}
+
+function reverseCurrentPathCells(path) {
+  return [...path].reverse();
 }
 
 function renderAllPaths() {
@@ -324,6 +343,13 @@ function isCorrectEndpoint(cell, color) {
   return false;
 }
 
+function hasReachedCorrectEndpoint() {
+  if (!currentColor || currentPath.length === 0) return false;
+
+  const lastCell = currentPath[currentPath.length - 1];
+  return isCorrectEndpoint(lastCell, currentColor);
+}
+
 function checkWin() {
   for (let color in completed) {
     if (!completed[color]) {
@@ -391,6 +417,17 @@ function showGame() {
   if (backBtn) backBtn.style.display = "inline-block";
 }
 
+function hideSplashScreen() {
+  const splash = document.getElementById("splash-screen");
+  if (!splash) return;
+
+  splash.classList.add("hidden");
+
+  setTimeout(() => {
+    splash.style.display = "none";
+  }, 500);
+}
+
 function renderDifficultyButtons() {
   const container = document.getElementById("difficulty-buttons");
   if (!container) return;
@@ -410,26 +447,93 @@ function renderDifficultyButtons() {
 }
 
 function startDrawing(cell) {
-  if (cell.dataset.endpoint !== "true") return;
+  const color = cell.dataset.color;
+
+  // Start nur auf eigenem Endpoint oder auf bestehendem eigenen Planungs-Pfad
+  if (!color) return;
 
   hideWinMessage();
   hideNextLevelButton();
 
-  const color = cell.dataset.color;
+  const existingPath = paths[color] || [];
+  const isCompleted = completed[color] === true;
 
   currentColor = color;
   isDrawing = true;
-  startEndpointCell = cell;
 
-  // Nur eigene Linie darf beim Neustart gelöscht werden
-  clearPath(currentColor, true);
+  // Fall 1: fertiger Pfad oder kein Pfad -> normaler Start vom Endpoint
+  if (existingPath.length === 0 || isCompleted) {
+    if (cell.dataset.endpoint !== "true") {
+      isDrawing = false;
+      currentColor = null;
+      return;
+    }
 
-  currentPath = [cell];
-  renderAllPaths();
+    startEndpointCell = cell;
+    clearPath(currentColor, true);
+    currentPath = [cell];
+    lastProcessedCell = cell;
+    pendingPointerCell = cell;
+    renderAllPaths();
+    return;
+  }
+
+  // Fall 2: unfertiger Pfad existiert bereits
+  const firstCell = existingPath[0];
+  const lastCell = existingPath[existingPath.length - 1];
+
+  const clickedFirst =
+    Number(cell.dataset.row) === Number(firstCell.dataset.row) &&
+    Number(cell.dataset.col) === Number(firstCell.dataset.col);
+
+  const clickedLast =
+    Number(cell.dataset.row) === Number(lastCell.dataset.row) &&
+    Number(cell.dataset.col) === Number(lastCell.dataset.col);
+
+  if (clickedLast) {
+    // vom offenen Ende weiterzeichnen
+    startEndpointCell = existingPath[0];
+    currentPath = [...existingPath];
+    lastProcessedCell = cell;
+    pendingPointerCell = cell;
+    renderAllPaths();
+    return;
+  }
+
+  if (clickedFirst) {
+    // vom Anfang weiterzeichnen
+    startEndpointCell = cell;
+    currentPath = [...existingPath];
+    lastProcessedCell = cell;
+    pendingPointerCell = cell;
+    renderAllPaths();
+    return;
+  }
+
+  // Wenn auf einem Endpoint derselben Farbe geklickt wird:
+  // bewusst neu anfangen
+  if (cell.dataset.endpoint === "true") {
+    startEndpointCell = cell;
+    clearPath(currentColor, true);
+    currentPath = [cell];
+    lastProcessedCell = cell;
+    pendingPointerCell = cell;
+    renderAllPaths();
+    return;
+  }
+
+  // Sonst nichts tun
+  isDrawing = false;
+  currentColor = null;
 }
 
 function continueDrawingStep(cell) {
   if (!isDrawing || !currentColor) return false;
+
+  // Wenn Ziel schon erreicht wurde, nichts mehr erweitern
+  if (hasReachedCorrectEndpoint()) {
+    return false;
+  }
 
   const lastCell = currentPath[currentPath.length - 1];
   if (!lastCell) return false;
@@ -472,6 +576,13 @@ function continueDrawingStep(cell) {
   }
 
   currentPath.push(cell);
+
+  // Falls wir jetzt den richtigen Endpunkt erreicht haben:
+  // sofort nicht weiter erweitern
+  if (hasReachedCorrectEndpoint()) {
+    return false;
+  }
+
   return true;
 }
 
@@ -516,12 +627,26 @@ function continueDrawing(cell) {
   const lastCell = currentPath[currentPath.length - 1];
   if (!lastCell || cell === lastCell) return;
 
+  // Wenn schon korrekt verbunden, nichts mehr machen
+  if (hasReachedCorrectEndpoint()) {
+    renderAllPaths();
+    return;
+  }
+
   const cellsToTraverse = getInterpolatedCells(lastCell, cell);
 
   let changed = false;
 
   for (const nextCell of cellsToTraverse) {
     const success = continueDrawingStep(nextCell);
+
+    if (
+      currentPath.length > 0 &&
+      hasReachedCorrectEndpoint()
+    ) {
+      changed = true;
+      break;
+    }
 
     if (!success) {
       break;
@@ -549,6 +674,7 @@ function stopDrawing() {
   const lastCell = currentPath[currentPath.length - 1];
 
   if (isCorrectEndpoint(lastCell, drawnColor)) {
+    // korrekt verbunden => fertige Linie
     paths[drawnColor] = [...currentPath];
     completed[drawnColor] = true;
 
@@ -556,28 +682,75 @@ function stopDrawing() {
       cell.dataset.locked = "true";
     });
   } else {
-    clearCurrentPath();
-    paths[drawnColor] = [];
+    // unvollständig => als Planungs-Pfad sichtbar lassen
+    paths[drawnColor] = [...currentPath];
     completed[drawnColor] = false;
+
+    paths[drawnColor].forEach(cell => {
+      if (cell.dataset.endpoint !== "true") {
+        cell.dataset.color = drawnColor;
+        delete cell.dataset.locked;
+      }
+    });
   }
 
-  // GANZ WICHTIG: erst Zeichenzustand zurücksetzen,
-  // dann neu rendern
-  isDrawing = false;
+    isDrawing = false;
   currentColor = null;
   currentPath = [];
+  startEndpointCell = null;
+  pendingPointerCell = null;
+  lastProcessedCell = null;
 
   renderAllPaths();
 
   if (checkWin()) {
-  showWinMessage();
-  showNextLevelButton();
-}
+    showWinMessage();
+    showNextLevelButton();
+  }
 }
 
 function getCellFromPointerEvent(event) {
   const element = document.elementFromPoint(event.clientX, event.clientY);
   return element ? element.closest(".cell") : null;
+}
+
+function getCellFromPointerPosition(event) {
+  const rect = board.getBoundingClientRect();
+  const styles = getComputedStyle(board);
+  const gap = parseFloat(styles.gap) || 0;
+
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+
+  if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
+    return null;
+  }
+
+  const totalGapX = gap * (gridSize - 1);
+  const totalGapY = gap * (gridSize - 1);
+
+  const cellWidth = (rect.width - totalGapX) / gridSize;
+  const cellHeight = (rect.height - totalGapY) / gridSize;
+
+  const col = Math.floor(x / (cellWidth + gap));
+  const row = Math.floor(y / (cellHeight + gap));
+
+  if (row < 0 || row >= gridSize || col < 0 || col >= gridSize) {
+    return null;
+  }
+
+  return getCell(row, col);
+}
+
+function processPendingPointerMove() {
+  animationFrameScheduled = false;
+
+  if (!isDrawing || !pendingPointerCell) return;
+
+  if (pendingPointerCell === lastProcessedCell) return;
+
+  lastProcessedCell = pendingPointerCell;
+  continueDrawing(pendingPointerCell);
 }
 
 function addEventListeners() {
@@ -588,7 +761,7 @@ function addEventListeners() {
   board.onpointercancel = null;
 
   board.onpointerdown = (event) => {
-    const cell = event.target.closest(".cell");
+    const cell = getCellFromPointerPosition(event) || event.target.closest(".cell");
     if (!cell) return;
 
     event.preventDefault();
@@ -601,9 +774,14 @@ function addEventListeners() {
 
     event.preventDefault();
 
-    const cell = getCellFromPointerEvent(event);
-    if (cell) {
-      continueDrawing(cell);
+    const cell = getCellFromPointerPosition(event);
+    if (!cell) return;
+
+    pendingPointerCell = cell;
+
+    if (!animationFrameScheduled) {
+      animationFrameScheduled = true;
+      requestAnimationFrame(processPendingPointerMove);
     }
   };
 
@@ -755,3 +933,22 @@ loadProgress();
 renderDifficultyButtons();
 updateScoreboard();
 showMenu();
+
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    hideSplashScreen();
+  }, 700);
+});
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("./sw.js")
+      .then(() => {
+        console.log("Service Worker registriert.");
+      })
+      .catch(error => {
+        console.error("Service Worker Fehler:", error);
+      });
+  });
+}
