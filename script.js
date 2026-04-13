@@ -700,6 +700,7 @@ function stopDrawing() {
   startEndpointCell = null;
   pendingPointerCell = null;
   lastProcessedCell = null;
+  animationFrameScheduled = false;
 
   renderAllPaths();
 
@@ -787,6 +788,11 @@ function addEventListeners() {
 
   board.onpointerup = (event) => {
     event.preventDefault();
+
+    if (board.hasPointerCapture?.(event.pointerId)) {
+      board.releasePointerCapture(event.pointerId);
+    }
+
     stopDrawing();
   };
 
@@ -797,6 +803,11 @@ function addEventListeners() {
 
   board.onpointercancel = (event) => {
     event.preventDefault();
+
+    if (board.hasPointerCapture?.(event.pointerId)) {
+      board.releasePointerCapture(event.pointerId);
+    }
+
     stopDrawing();
   };
 }
