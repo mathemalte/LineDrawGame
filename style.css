@@ -173,6 +173,8 @@ button {
   cursor: pointer;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
   transition: transform 0.08s ease, opacity 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button:hover {

@@ -37,6 +37,14 @@ function startDifficulty(difficulty) {
 function nextGeneratedLevel() {
   if (!currentDifficulty) return;
 
+  pendingPointerCell = null;
+  lastProcessedCell = null;
+  animationFrameScheduled = false;
+  isDrawing = false;
+  currentColor = null;
+  currentPath = [];
+  startEndpointCell = null;
+
   difficultyProgress[currentDifficulty] += 1;
   saveProgress();
   updateScoreboard();
@@ -924,7 +932,8 @@ function updateScoreboard() {
 const resetProgressBtn = document.getElementById("reset-progress-btn");
 
 if (resetProgressBtn) {
-  resetProgressBtn.addEventListener("click", () => {
+  resetProgressBtn.addEventListener("pointerup", (event) => {
+    event.preventDefault();
     resetProgress();
     alert("Fortschritt zurückgesetzt.");
   });
@@ -932,21 +941,24 @@ if (resetProgressBtn) {
 
 const nextLevelBtn = document.getElementById("next-level-btn");
 if (nextLevelBtn) {
-  nextLevelBtn.addEventListener("click", () => {
+  nextLevelBtn.addEventListener("pointerup", (event) => {
+    event.preventDefault();
     nextGeneratedLevel();
   });
 }
 
 const resetBtn = document.getElementById("reset-btn");
 if (resetBtn) {
-  resetBtn.addEventListener("click", () => {
+  resetBtn.addEventListener("pointerup", (event) => {
+    event.preventDefault();
     resetCurrentLevel();
   });
 }
 
 const backBtn = document.getElementById("back-to-menu-btn");
 if (backBtn) {
-  backBtn.addEventListener("click", () => {
+  backBtn.addEventListener("pointerup", (event) => {
+    event.preventDefault();
     showMenu();
   });
 }
