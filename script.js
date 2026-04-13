@@ -149,6 +149,22 @@ function clearPipeClasses(cell) {
   pipe.innerHTML = "";
 }
 
+function animateEndpoint(cell, success = false) {
+  if (!cell) return;
+
+  cell.classList.remove("endpoint-animate", "endpoint-success");
+
+  // Reflow erzwingen, damit die Animation neu startet
+  void cell.offsetWidth;
+
+  const className = success ? "endpoint-success" : "endpoint-animate";
+  cell.classList.add(className);
+
+  setTimeout(() => {
+    cell.classList.remove(className);
+  }, success ? 350 : 220);
+}
+
 function applyPipeShape(cell, color, connections, isEndpoint = false) {
   const pipe = cell.querySelector(".pipe");
   if (!pipe) return;
@@ -470,6 +486,7 @@ vibrate(10);
 
   hideWinMessage();
   hideNextLevelButton();
+  animateEndpoint(cell, false);
 
   const existingPath = paths[color] || [];
   const isCompleted = completed[color] === true;
@@ -689,10 +706,13 @@ function stopDrawing() {
   const drawnColor = currentColor;
   const lastCell = currentPath[currentPath.length - 1];
 
+  let successStartCell = null;
+  let successEndCell = null;
+
   if (isCorrectEndpoint(lastCell, drawnColor)) {
-    // stärkeres Feedback beim erfolgreichen Verbinden
-vibrate([20, 30, 20]);
-    // korrekt verbunden => fertige Linie
+    successStartCell = startEndpointCell;
+    successEndCell = lastCell;
+
     paths[drawnColor] = [...currentPath];
     completed[drawnColor] = true;
 
@@ -700,7 +720,6 @@ vibrate([20, 30, 20]);
       cell.dataset.locked = "true";
     });
   } else {
-    // unvollständig => als Planungs-Pfad sichtbar lassen
     paths[drawnColor] = [...currentPath];
     completed[drawnColor] = false;
 
@@ -712,7 +731,7 @@ vibrate([20, 30, 20]);
     });
   }
 
-    isDrawing = false;
+  isDrawing = false;
   currentColor = null;
   currentPath = [];
   startEndpointCell = null;
@@ -721,6 +740,13 @@ vibrate([20, 30, 20]);
   animationFrameScheduled = false;
 
   renderAllPaths();
+
+  if (successStartCell && successEndCell) {
+    requestAnimationFrame(() => {
+      animateEndpoint(successStartCell, true);
+      animateEndpoint(successEndCell, true);
+    });
+  }
 
   if (checkWin()) {
     showWinMessage();
