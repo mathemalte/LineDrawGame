@@ -1,5 +1,14 @@
+function shuffleArray(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 const levelSeeds = {
-  easy: [
+  easy: shuffleArray([
   {
     id: "easy-seed-001",
     size: 6,
@@ -92,8 +101,13 @@ const levelSeeds = {
       { color: "orange", start: [1, 5], end: [3, 2] },
       { color: "red",    start: [2, 5], end: [4, 2] }
     ]
-  }
-],
+  },
+
+  //GENERATED EASY LEVEL
+  ...(Array.isArray(generatedEasyLevels)
+  ? generatedEasyLevels
+  : generatedEasyLevels.easy || [])
+]),
 
   medium: [
     // deine medium level hier
