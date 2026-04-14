@@ -337,6 +337,33 @@ function trimCurrentPathTo(cell) {
   currentPath = currentPath.slice(0, index + 1);
 }
 
+function isSameBoardCell(a, b) {
+  if (!a || !b) return false;
+
+  return (
+    Number(a.dataset.row) === Number(b.dataset.row) &&
+    Number(a.dataset.col) === Number(b.dataset.col)
+  );
+}
+
+function trimStoredPathToRange(color, keptPath, oldPath) {
+  const keptSet = new Set(
+    keptPath.map(cell => `${cell.dataset.row},${cell.dataset.col}`)
+  );
+
+  oldPath.forEach(cell => {
+    const key = `${cell.dataset.row},${cell.dataset.col}`;
+
+    if (!keptSet.has(key) && cell.dataset.endpoint !== "true") {
+      delete cell.dataset.color;
+      delete cell.dataset.locked;
+    }
+  });
+
+  paths[color] = [...keptPath];
+  completed[color] = false;
+}
+
 function isCorrectEndpoint(cell, color) {
   const pair = level.pairs.find(p => p.color === color);
   if (!pair || !startEndpointCell) return false;
@@ -477,11 +504,9 @@ function renderDifficultyButtons() {
 }
 
 function startDrawing(cell) {
-  // leichtes Feedback beim Start
-vibrate(10);
-  const color = cell.dataset.color;
+  vibrate(10);
 
-  // Start nur auf eigenem Endpoint oder auf bestehendem eigenen Planungs-Pfad
+  const color = cell.dataset.color;
   if (!color) return;
 
   hideWinMessage();
@@ -494,7 +519,7 @@ vibrate(10);
   currentColor = color;
   isDrawing = true;
 
-  // Fall 1: fertiger Pfad oder kein Pfad -> normaler Start vom Endpoint
+  // Fall 1: kein bestehender Pfad oder fertiger Pfad
   if (existingPath.length === 0 || isCompleted) {
     if (cell.dataset.endpoint !== "true") {
       isDrawing = false;
@@ -511,40 +536,38 @@ vibrate(10);
     return;
   }
 
-  // Fall 2: unfertiger Pfad existiert bereits
-  const firstCell = existingPath[0];
-  const lastCell = existingPath[existingPath.length - 1];
+  // Fall 2: Klick auf bestehendem unfertigen Pfad
+  const clickedIndex = existingPath.findIndex(pathCell =>
+    isSameBoardCell(pathCell, cell)
+  );
 
-  const clickedFirst =
-    Number(cell.dataset.row) === Number(firstCell.dataset.row) &&
-    Number(cell.dataset.col) === Number(firstCell.dataset.col);
+  if (clickedIndex !== -1) {
+    const distanceToStart = clickedIndex;
+    const distanceToEnd = existingPath.length - 1 - clickedIndex;
 
-  const clickedLast =
-    Number(cell.dataset.row) === Number(lastCell.dataset.row) &&
-    Number(cell.dataset.col) === Number(lastCell.dataset.col);
+    let keptPath;
 
-  if (clickedLast) {
-    // vom offenen Ende weiterzeichnen
-    startEndpointCell = existingPath[0];
-    currentPath = [...existingPath];
+    if (distanceToStart <= distanceToEnd) {
+      // näher am Anfang -> vorderen Teil behalten
+      keptPath = existingPath.slice(0, clickedIndex + 1);
+      startEndpointCell = keptPath[0];
+      currentPath = [...keptPath];
+    } else {
+      // näher am Ende -> hinteren Teil behalten, aber umdrehen
+      keptPath = existingPath.slice(clickedIndex).reverse();
+      startEndpointCell = keptPath[0];
+      currentPath = [...keptPath];
+    }
+
+    trimStoredPathToRange(color, currentPath, existingPath);
+
     lastProcessedCell = cell;
     pendingPointerCell = cell;
     renderAllPaths();
     return;
   }
 
-  if (clickedFirst) {
-    // vom Anfang weiterzeichnen
-    startEndpointCell = cell;
-    currentPath = [...existingPath];
-    lastProcessedCell = cell;
-    pendingPointerCell = cell;
-    renderAllPaths();
-    return;
-  }
-
-  // Wenn auf einem Endpoint derselben Farbe geklickt wird:
-  // bewusst neu anfangen
+  // Fall 3: auf Endpoint derselben Farbe, aber nicht auf aktuellem Pfad
   if (cell.dataset.endpoint === "true") {
     startEndpointCell = cell;
     clearPath(currentColor, true);
@@ -555,7 +578,6 @@ vibrate(10);
     return;
   }
 
-  // Sonst nichts tun
   isDrawing = false;
   currentColor = null;
 }
