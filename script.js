@@ -110,6 +110,11 @@ let pendingPointerCell = null;
 let animationFrameScheduled = false;
 let lastProcessedCell = null;
 
+let isTimeMode = false;
+let timeModeSecondsLeft = 120;
+let timeModeSolvedCount = 0;
+let timeModeTimerId = null;
+
 const paths = {};
 const completed = {};
 
@@ -445,6 +450,9 @@ function hideNextLevelButton() {
 }
 
 function showMenu() {
+  stopTimeModeTimer();
+isTimeMode = false;
+
   const menu = document.getElementById("menu-screen");
   const boardEl = document.getElementById("game-board");
   const buttonRow = document.querySelector(".button-row");
@@ -501,6 +509,13 @@ function renderDifficultyButtons() {
 
     container.appendChild(btn);
   });
+
+  const timeBtn = document.createElement("button");
+  timeBtn.textContent = "Time Mode";
+  timeBtn.addEventListener("click", () => {
+    startTimeMode();
+  });
+  container.appendChild(timeBtn);
 }
 
 function startDrawing(cell) {
@@ -771,9 +786,18 @@ function stopDrawing() {
   }
 
   if (checkWin()) {
+  if (isTimeMode) {
+    timeModeSolvedCount += 1;
+    updateTimeModeIndicator();
+
+    setTimeout(() => {
+      nextTimeModeLevel();
+    }, 250);
+  } else {
     showWinMessage();
     showNextLevelButton();
   }
+}
 }
 
 function getCellFromPointerEvent(event) {
@@ -947,7 +971,14 @@ const cellSize = Math.floor(
 
 function updateLevelIndicator() {
   const indicator = document.getElementById("level-indicator");
-  if (!indicator || !currentDifficulty) return;
+  if (!indicator) return;
+
+  if (isTimeMode) {
+    indicator.textContent = `TIME MODE – ${formatTimeMode(timeModeSecondsLeft)} – Gelöst: ${timeModeSolvedCount}`;
+    return;
+  }
+
+  if (!currentDifficulty) return;
 
   indicator.textContent =
     `${currentDifficulty.toUpperCase()} – Level ${difficultyProgress[currentDifficulty] + 1}`;
@@ -980,6 +1011,110 @@ function updateScoreboard() {
 
   if (hard) {
     hard.textContent = `Hard: Level ${difficultyProgress.hard + 1}`;
+  }
+}
+
+function formatTimeMode(seconds) {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${String(secs).padStart(2, "0")}`;
+}
+
+function updateTimeModeIndicator() {
+  const indicator = document.getElementById("level-indicator");
+  if (!indicator) return;
+
+  if (isTimeMode) {
+    indicator.textContent = `TIME MODE – ${formatTimeMode(timeModeSecondsLeft)} – Gelöst: ${timeModeSolvedCount}`;
+  } else if (currentDifficulty) {
+    indicator.textContent =
+      `${currentDifficulty.toUpperCase()} – Level ${difficultyProgress[currentDifficulty] + 1}`;
+  }
+}
+
+function stopTimeModeTimer() {
+  if (timeModeTimerId) {
+    clearInterval(timeModeTimerId);
+    timeModeTimerId = null;
+  }
+}
+
+function endTimeMode() {
+  stopTimeModeTimer();
+  isTimeMode = false;
+  currentDifficulty = null;
+
+  alert(`Zeit abgelaufen! Du hast ${timeModeSolvedCount} Level geschafft.`);
+
+  showMenu();
+  updateTimeModeIndicator();
+}
+
+function startTimeModeTimer() {
+  stopTimeModeTimer();
+
+  timeModeTimerId = setInterval(() => {
+    timeModeSecondsLeft -= 1;
+    updateTimeModeIndicator();
+
+    if (timeModeSecondsLeft <= 0) {
+      endTimeMode();
+    }
+  }, 1000);
+}
+
+function getRandomEasyLevel() {
+  const levels = levelWorlds.easy;
+
+  if (!levels || levels.length === 0) {
+    throw new Error("Keine Easy-Level für Time Mode verfügbar.");
+  }
+
+  return levels[Math.floor(Math.random() * levels.length)];
+}
+
+function startTimeMode() {
+  isTimeMode = true;
+  currentDifficulty = null;
+  timeModeSecondsLeft = 120;
+  timeModeSolvedCount = 0;
+
+  pendingPointerCell = null;
+  lastProcessedCell = null;
+  animationFrameScheduled = false;
+  isDrawing = false;
+  currentColor = null;
+  currentPath = [];
+  startEndpointCell = null;
+
+  try {
+    currentLevel = getRandomEasyLevel();
+    loadGeneratedLevel(currentLevel);
+    showGame();
+    updateTimeModeIndicator();
+    startTimeModeTimer();
+  } catch (error) {
+    alert("Time Mode konnte nicht gestartet werden.");
+  }
+}
+
+function nextTimeModeLevel() {
+  if (!isTimeMode) return;
+
+  pendingPointerCell = null;
+  lastProcessedCell = null;
+  animationFrameScheduled = false;
+  isDrawing = false;
+  currentColor = null;
+  currentPath = [];
+  startEndpointCell = null;
+
+  try {
+    currentLevel = getRandomEasyLevel();
+    loadGeneratedLevel(currentLevel);
+    updateTimeModeIndicator();
+  } catch (error) {
+    endTimeMode();
   }
 }
 

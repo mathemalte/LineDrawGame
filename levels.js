@@ -98,11 +98,14 @@ function buildVariantsFromSeeds(seedLevels, prefix) {
     "rotate270"
   ];
 
-  const seen = new Set();
-  const result = [];
+  const globalSeen = new Set();
+  const variantBuckets = [];
   let counter = 1;
 
+  // 1. Für jedes Seed-Level eigenen Varianten-Bucket bauen
   for (const seed of seedLevels) {
+    const localVariants = [];
+
     for (const transform of transforms) {
       const transformed = transformLevel(
         seed,
@@ -111,9 +114,9 @@ function buildVariantsFromSeeds(seedLevels, prefix) {
       );
 
       const sig1 = levelSignature(transformed);
-      if (!seen.has(sig1)) {
-        seen.add(sig1);
-        result.push(transformed);
+      if (!globalSeen.has(sig1)) {
+        globalSeen.add(sig1);
+        localVariants.push(transformed);
         counter++;
       }
 
@@ -123,15 +126,41 @@ function buildVariantsFromSeeds(seedLevels, prefix) {
       );
 
       const sig2 = levelSignature(recolored);
-      if (!seen.has(sig2)) {
-        seen.add(sig2);
-        result.push(recolored);
+      if (!globalSeen.has(sig2)) {
+        globalSeen.add(sig2);
+        localVariants.push(recolored);
         counter++;
+      }
+    }
+
+    if (localVariants.length > 0) {
+      variantBuckets.push(shuffleArray(localVariants));
+    }
+  }
+
+  // 2. Auch die Reihenfolge der Grund-Level mischen
+  const shuffledBuckets = shuffleArray(variantBuckets);
+
+  // 3. Rundeweise je eine Variante aus jedem Bucket ziehen
+  const result = [];
+  let addedSomething = true;
+
+  while (addedSomething) {
+    addedSomething = false;
+
+    for (const bucket of shuffledBuckets) {
+      if (bucket.length > 0) {
+        result.push(bucket.shift());
+        addedSomething = true;
       }
     }
   }
 
-  return result;
+  // 4. IDs neu sauber durchnummerieren
+  return result.map((level, index) => ({
+    ...level,
+    id: `${prefix}-${String(index + 1).padStart(3, "0")}`
+  }));
 }
 
 const levelWorlds = {
