@@ -500,6 +500,12 @@ function renderDifficultyButtons() {
   container.innerHTML = "";
 
   Object.keys(levelWorlds).forEach(difficulty => {
+    const levels = levelWorlds[difficulty];
+
+    if (!Array.isArray(levels) || levels.length === 0) {
+      return;
+    }
+
     const btn = document.createElement("button");
     btn.textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
 
@@ -510,12 +516,15 @@ function renderDifficultyButtons() {
     container.appendChild(btn);
   });
 
-  const timeBtn = document.createElement("button");
-  timeBtn.textContent = "Time Mode";
-  timeBtn.addEventListener("click", () => {
-    startTimeMode();
-  });
-  container.appendChild(timeBtn);
+  const easyLevels = levelWorlds.easy;
+  if (Array.isArray(easyLevels) && easyLevels.length > 0) {
+    const timeBtn = document.createElement("button");
+    timeBtn.textContent = "Time Mode";
+    timeBtn.addEventListener("click", () => {
+      startTimeMode();
+    });
+    container.appendChild(timeBtn);
+  }
 }
 
 function startDrawing(cell) {
@@ -556,23 +565,13 @@ function startDrawing(cell) {
     isSameBoardCell(pathCell, cell)
   );
 
-  if (clickedIndex !== -1) {
-    const distanceToStart = clickedIndex;
-    const distanceToEnd = existingPath.length - 1 - clickedIndex;
+    if (clickedIndex !== -1) {
+    // Immer den Pfad vom ursprünglichen Start bis zur angeklickten Stelle behalten.
+    // Nur der hintere Teil wird abgeschnitten und kann neu gezeichnet werden.
+    const keptPath = existingPath.slice(0, clickedIndex + 1);
 
-    let keptPath;
-
-    if (distanceToStart <= distanceToEnd) {
-      // näher am Anfang -> vorderen Teil behalten
-      keptPath = existingPath.slice(0, clickedIndex + 1);
-      startEndpointCell = keptPath[0];
-      currentPath = [...keptPath];
-    } else {
-      // näher am Ende -> hinteren Teil behalten, aber umdrehen
-      keptPath = existingPath.slice(clickedIndex).reverse();
-      startEndpointCell = keptPath[0];
-      currentPath = [...keptPath];
-    }
+    currentPath = [...keptPath];
+    startEndpointCell = currentPath[0];
 
     trimStoredPathToRange(color, currentPath, existingPath);
 
