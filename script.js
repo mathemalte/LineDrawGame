@@ -535,7 +535,7 @@ function startDrawing(cell) {
   isDrawing = true;
 
   // Fall 1: kein bestehender Pfad oder fertiger Pfad
-  if (existingPath.length === 0 || isCompleted) {
+  if (existingPath.length === 0) {
     if (cell.dataset.endpoint !== "true") {
       isDrawing = false;
       currentColor = null;
@@ -584,14 +584,26 @@ function startDrawing(cell) {
 
   // Fall 3: auf Endpoint derselben Farbe, aber nicht auf aktuellem Pfad
   if (cell.dataset.endpoint === "true") {
+  // nur resetten wenn KEIN bestehender Pfad oder komplett woanders
+  const existingPath = paths[color] || [];
+
+  const isPartOfPath = existingPath.some(p => isSameBoardCell(p, cell));
+
+  if (!isPartOfPath) {
     startEndpointCell = cell;
     clearPath(currentColor, true);
     currentPath = [cell];
-    lastProcessedCell = cell;
-    pendingPointerCell = cell;
-    renderAllPaths();
-    return;
+  } else {
+    // wenn Teil des Pfads → NICHT löschen, einfach weiter
+    startEndpointCell = existingPath[0];
+    currentPath = [...existingPath];
   }
+
+  lastProcessedCell = cell;
+  pendingPointerCell = cell;
+  renderAllPaths();
+  return;
+}
 
   isDrawing = false;
   currentColor = null;
